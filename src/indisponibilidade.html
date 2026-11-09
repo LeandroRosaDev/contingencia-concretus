@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#0762ff">
+  <meta name="robots" content="noindex, nofollow">
+  <!-- Tenta reconectar sozinho a cada 60s (mesmo valor do Retry-After do Worker). -->
+  <meta http-equiv="refresh" content="60">
+  <title>Manutenção | Concretus</title>
+  <style>
+    /* Paleta extraída do sistema Concretus (--primary: #0762ff, fundo branco, fonte Geist) */
+    :root {
+      color-scheme: light;
+      --primary: #0762ff;
+      --primary-dark: #0550d6;
+      --primary-soft: #eef4ff;
+      --contorno: #0a2a66;
+      --concreto: #9aa4b2;
+      --bg: #ffffff;
+      --text: #0a0a0a;
+      --muted: #737373;
+      --border: #e5e5e5;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(14px, 3vh, 28px) 16px;
+      overflow-x: hidden;
+      background-color: var(--bg);
+      /* Papel milimetrado de projeto estrutural */
+      background-image:
+        linear-gradient(#0762ff0d 1px, transparent 1px),
+        linear-gradient(90deg, #0762ff0d 1px, transparent 1px),
+        linear-gradient(#0762ff06 1px, transparent 1px),
+        linear-gradient(90deg, #0762ff06 1px, transparent 1px);
+      background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+      color: var(--text);
+      font: 16px/1.6 "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- Fundo: manchas azuis que flutuam devagar ---------- */
+    .blobs { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+    .blobs span {
+      position: absolute;
+      width: 46vmax; height: 46vmax;
+      border-radius: 50%;
+      filter: blur(40px);
+      opacity: .7;
+      animation: deriva 22s ease-in-out infinite alternate;
+    }
+    .blobs span:nth-child(1) { top: -18vmax; left: -14vmax; background: radial-gradient(circle, #0762ff1f, transparent 65%); }
+    .blobs span:nth-child(2) { bottom: -20vmax; right: -16vmax; background: radial-gradient(circle, #38bdf824, transparent 65%); animation-duration: 26s; animation-direction: alternate-reverse; }
+    .blobs span:nth-child(3) { top: 30%; left: 55%; width: 28vmax; height: 28vmax; background: radial-gradient(circle, #0762ff12, transparent 65%); animation-duration: 18s; }
+    @keyframes deriva {
+      0%   { transform: translate(0, 0) scale(1); }
+      50%  { transform: translate(4vmax, 3vmax) scale(1.08); }
+      100% { transform: translate(-3vmax, 5vmax) scale(.95); }
+    }
+
+    .container { width: min(100%, 560px); text-align: center; }
+
+    /* ---------- Marca: o logotipo "concreta" de baixo para cima ---------- */
+    .marca {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+      text-align: left;
+    }
+    .marca img {
+      width: 50px; height: 50px;
+      animation: concretar 1.6s cubic-bezier(.3, .7, .3, 1) both;
+    }
+    @keyframes concretar {
+      from { clip-path: inset(100% 0 0 0); transform: translateY(6px); }
+      to   { clip-path: inset(0 0 0 0); transform: none; }
+    }
+    .marca-nome { display: block; font-size: 26px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+    .marca-nome span { color: var(--primary); }
+    .marca-slogan { display: block; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+
+    /*
+      ---------- Palco: usina de concreto ----------
+      Um único SVG (viewBox 400 × 288) escala inteiro em qualquer tela.
+
+      Ciclo de 12s, sincronizado com o checklist e com a barra de resistência:
+        0–10%   betoneira chega e estaciona sob a usina
+        2–22%   balança dosa o traço
+        26–48%  concreto desce pela bica e enche o balão
+        52–70%  selo "Slump OK"
+        74–88%  betoneira sai com a remessa
+    */
+    /*
+      A ilustração encolhe conforme a altura da janela para a página
+      inteira caber na tela sem rolagem (--resto ≈ altura do restante do conteúdo).
+    */
+    .palco {
+      --resto: 620px;
+      position: relative;
+      width: min(100%, 440px, max(170px, calc((100vh - var(--resto)) * 1.389)));
+      width: min(100%, 440px, max(170px, calc((100dvh - var(--resto)) * 1.389)));
+      margin: 4px auto 0;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+              mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    }
+    .palco svg { display: block; width: 100%; height: auto; }
+
+    .nuvem { animation: nuvem 14s ease-in-out infinite alternate; }
+    .nuvem.n2 { animation-duration: 18s; animation-direction: alternate-reverse; }
+    @keyframes nuvem { from { transform: translateX(-14px); } to { transform: translateX(14px); } }
+
+    /* Brita subindo pela correia transportadora */
+    .brita { stroke-dasharray: 0 9; animation: correia .6s linear infinite; }
+    @keyframes correia { to { stroke-dashoffset: -18; } }
+    /* Cimento correndo pela rosca */
+    .cimento { stroke-dasharray: 4 9; animation: rosca .5s linear infinite; }
+    @keyframes rosca { to { stroke-dashoffset: -13; } }
+
+    /* Balança de dosagem enche e esvazia a cada carga */
+    .balanca { transform-box: fill-box; transform-origin: 0 50%; transform: scaleX(0); animation: balanca 12s infinite; }
+    @keyframes balanca {
+      0%, 2%    { transform: scaleX(0); }
+      22%, 28%  { transform: scaleX(1); }
+      46%, 100% { transform: scaleX(0); }
+    }
+    .lampada { animation: piscar 1s steps(1) infinite; }
+    @keyframes piscar { 50% { opacity: .25; } }
+
+    /* Jato de concreto: abre de cima para baixo e termina caindo inteiro */
+    .jato { transform-box: fill-box; transform-origin: 50% 0; transform: scaleY(0); animation: jato 12s infinite; }
+    @keyframes jato {
+      0%, 26%   { transform: translateY(0) scaleY(0); animation-timing-function: ease-out; }
+      28.5%, 46% { transform: translateY(0) scaleY(1); animation-timing-function: ease-in; }
+      48.5%, 100% { transform: translateY(26px) scaleY(0); }
+    }
+    .fluxo { stroke-dasharray: 3 6; animation: fluxo .35s linear infinite; }
+    @keyframes fluxo { to { stroke-dashoffset: -9; } }
+    .respingo { opacity: 0; animation: respingo 12s infinite; }
+    .respingo.r2 { animation-name: respingo2; }
+    @keyframes respingo {
+      0%, 29%, 47%, 100% { opacity: 0; transform: translate(0, 0); }
+      31%, 35%, 39%, 43% { opacity: 1; transform: translate(-3px, -6px); }
+      33%, 37%, 41%, 45% { opacity: 0; transform: translate(-6px, 0); }
+    }
+    @keyframes respingo2 {
+      0%, 30%, 47%, 100% { opacity: 0; transform: translate(0, 0); }
+      32%, 36%, 40%, 44% { opacity: 1; transform: translate(4px, -7px); }
+      34%, 38%, 42%, 46% { opacity: 0; transform: translate(7px, 0); }
+    }
+
+    /* Betoneira: chega, carrega, sai */
+    .mover { animation: mover 12s infinite; }
+    @keyframes mover {
+      0%        { transform: translateX(-360px); animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
+      10%, 74%  { transform: translateX(0); animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
+      88%, 100% { transform: translateX(340px); }
+    }
+    /* O caminhão "senta" um pouco à medida que o balão enche */
+    .carga { animation: carga 12s infinite; }
+    @keyframes carga {
+      0%, 10%   { transform: translateY(0); }
+      11%       { transform: translateY(1.5px); }
+      12.5%, 28% { transform: translateY(0); }
+      46%, 88%  { transform: translateY(2px); }
+      90%, 100% { transform: translateY(0); }
+    }
+    .roda { transform-box: fill-box; transform-origin: center; animation: roda 12s infinite; }
+    @keyframes roda {
+      0%        { transform: rotate(0); animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
+      10%, 74%  { transform: rotate(900deg); animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
+      88%, 100% { transform: rotate(1800deg); }
+    }
+    /* Balão girando sem parar, como em toda betoneira de verdade */
+    .helice { animation: helice .7s linear infinite; }
+    @keyframes helice { to { transform: translateX(16px); } }
+
+    /* Selo de slump aprovado */
+    .slump { transform-box: fill-box; transform-origin: 50% 100%; opacity: 0; animation: slump 12s infinite; }
+    @keyframes slump {
+      0%, 51%   { opacity: 0; transform: translateY(8px) scale(.6); }
+      54%       { opacity: 1; transform: translateY(0) scale(1.1); }
+      56%, 69%  { opacity: 1; transform: translateY(0) scale(1); }
+      72%, 100% { opacity: 0; transform: translateY(-6px) scale(1); }
+    }
+
+    /* ---------- Texto ---------- */
+    main { margin-top: clamp(8px, 2vh, 18px); }
+    .selo {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 13px;
+      border: 1px solid #0762ff33;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .selo::before {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 0 #0762ff66;
+      animation: pulso 1.8s ease-out infinite;
+    }
+    @keyframes pulso { to { box-shadow: 0 0 0 7px #0762ff00; } }
+    h1 {
+      margin: 14px 0 12px;
+      font-size: clamp(26px, 6vw, 36px);
+      line-height: 1.15;
+      letter-spacing: -.035em;
+      text-wrap: balance;
+    }
+    h1 span { color: var(--primary); }
+    .descricao {
+      margin: 0 auto;
+      max-width: 450px;
+      color: var(--muted);
+      font-size: 15px;
+      text-wrap: pretty;
+    }
+
+    /* ---------- Checklist animado ---------- */
+    .tarefas {
+      margin: clamp(14px, 2.6vh, 24px) auto 0;
+      padding: 14px 18px 12px;
+      max-width: 460px;
+      text-align: left;
+      background: #ffffffd9;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 12px 32px -18px #0a2a6640;
+      backdrop-filter: blur(6px);
+    }
+    /* Etapas em grade 2 × 2 para economizar altura */
+    .tarefas ul {
+      list-style: none;
+      margin: 0 0 10px;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px 14px;
+    }
+    .tarefas li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 0;
+      font-size: 14px;
+      line-height: 1.3;
+      color: var(--text);
+    }
+    .ico { position: relative; flex: none; width: 20px; height: 20px; }
+    .ico > * { position: absolute; inset: 0; opacity: 0; }
+    .ico .pend { inset: 6px; border-radius: 50%; background: #d4d4d8; }
+    .ico .exec {
+      border-radius: 50%;
+      border: 2.5px solid #0762ff2e;
+      border-top-color: var(--primary);
+    }
+    .ico .ok {
+      border-radius: 50%;
+      background: var(--primary);
+      display: grid;
+      place-items: center;
+    }
+    .ico .ok svg { width: 12px; height: 12px; }
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    /*
+      Janelas do ciclo de 12s:
+      1 = 0–25% | 2 = 25–50% | 3 = 50–70% | 4 = 70–88% | tudo concluído até 100%
+    */
+    .t1 .pend { animation: t1p 12s infinite; }
+    .t1 .exec { animation: t1e 12s infinite, girar .8s linear infinite; }
+    .t1 .ok   { animation: t1o 12s infinite; }
+    .t2 .pend { animation: t2p 12s infinite; }
+    .t2 .exec { animation: t2e 12s infinite, girar .8s linear infinite; }
+    .t2 .ok   { animation: t2o 12s infinite; }
+    .t3 .pend { animation: t3p 12s infinite; }
+    .t3 .exec { animation: t3e 12s infinite, girar .8s linear infinite; }
+    .t3 .ok   { animation: t3o 12s infinite; }
+    .t4 .pend { animation: t4p 12s infinite; }
+    .t4 .exec { animation: t4e 12s infinite, girar .8s linear infinite; }
+    .t4 .ok   { animation: t4o 12s infinite; }
+    .t2 .rot { animation: t2r 12s infinite; }
+    .t3 .rot { animation: t3r 12s infinite; }
+    .t4 .rot { animation: t4r 12s infinite; }
+
+    @keyframes t1p { 0%, 100% { opacity: 0; } }
+    @keyframes t1e { 0%, 24.6% { opacity: 1; } 25%, 100% { opacity: 0; } }
+    @keyframes t1o { 0%, 24.6% { opacity: 0; transform: scale(.4); } 25.7% { opacity: 1; transform: scale(1.15); } 26.7%, 99% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+
+    @keyframes t2p { 0%, 24.6% { opacity: 1; } 25%, 99% { opacity: 0; } 100% { opacity: 1; } }
+    @keyframes t2e { 0%, 24.6% { opacity: 0; } 25%, 49.6% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    @keyframes t2o { 0%, 49.6% { opacity: 0; transform: scale(.4); } 50.7% { opacity: 1; transform: scale(1.15); } 51.7%, 99% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+    @keyframes t2r { 0%, 24.6% { color: var(--muted); } 25%, 99% { color: var(--text); } 100% { color: var(--muted); } }
+
+    @keyframes t3p { 0%, 49.6% { opacity: 1; } 50%, 99% { opacity: 0; } 100% { opacity: 1; } }
+    @keyframes t3e { 0%, 49.6% { opacity: 0; } 50%, 69.6% { opacity: 1; } 70%, 100% { opacity: 0; } }
+    @keyframes t3o { 0%, 69.6% { opacity: 0; transform: scale(.4); } 70.7% { opacity: 1; transform: scale(1.15); } 71.7%, 99% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+    @keyframes t3r { 0%, 49.6% { color: var(--muted); } 50%, 99% { color: var(--text); } 100% { color: var(--muted); } }
+
+    @keyframes t4p { 0%, 69.6% { opacity: 1; } 70%, 99% { opacity: 0; } 100% { opacity: 1; } }
+    @keyframes t4e { 0%, 69.6% { opacity: 0; } 70%, 87.6% { opacity: 1; } 88%, 100% { opacity: 0; } }
+    @keyframes t4o { 0%, 87.6% { opacity: 0; transform: scale(.4); } 88.7% { opacity: 1; transform: scale(1.15); } 89.7%, 99% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+    @keyframes t4r { 0%, 69.6% { color: var(--muted); } 70%, 99% { color: var(--text); } 100% { color: var(--muted); } }
+
+    /* ---------- Cura: ganho de resistência (substitui a barra de progresso) ---------- */
+    .cura { padding-top: 12px; border-top: 1px dashed var(--border); }
+    .cura-topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .cura-topo strong { color: var(--text); font-weight: 650; }
+    @property --mpa { syntax: '<integer>'; inherits: false; initial-value: 0; }
+    .mpa { color: var(--primary); font-weight: 750; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .mpa::before {
+      counter-reset: mpa var(--mpa);
+      content: counter(mpa) " MPa";
+      animation: mpa 12s infinite;
+    }
+    .mpa small { color: var(--muted); font-weight: 500; font-size: 12px; }
+    @keyframes mpa {
+      0%   { --mpa: 0; }
+      25%  { --mpa: 12; }
+      50%  { --mpa: 21; }
+      70%  { --mpa: 26; }
+      88%, 99% { --mpa: 30; }
+      100% { --mpa: 0; }
+    }
+    .trilho {
+      position: relative;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      border: 1px solid #0762ff26;
+      overflow: hidden;
+    }
+    /* Corpo de prova: textura de concreto preenchida de azul */
+    .enchimento {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-color: var(--primary);
+      background-image:
+        radial-gradient(#ffffff40 1px, transparent 1.6px),
+        linear-gradient(90deg, #ffffff00 70%, #ffffff55);
+      background-size: 7px 7px, 100% 100%;
+      transform-origin: 0 50%;
+      transform: scaleX(.7);
+      animation: curar 12s infinite;
+    }
+    @keyframes curar {
+      0%   { transform: scaleX(0); }
+      25%  { transform: scaleX(.4); }
+      50%  { transform: scaleX(.7); }
+      70%  { transform: scaleX(.87); }
+      88%, 99% { transform: scaleX(1); }
+      100% { transform: scaleX(0); }
+    }
+    .marcos { position: relative; height: 18px; margin-top: 6px; font-size: 11px; color: var(--muted); }
+    .marcos span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+    .marcos span::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: -9px;
+      width: 1px; height: 6px;
+      background: #0762ff59;
+    }
+    .marcos .m3  { left: 40%; }
+    .marcos .m7  { left: 70%; }
+    .marcos .m28 { left: auto; right: 0; transform: none; }
+    .marcos .m28::before { left: auto; right: 0; }
+
+    /* ---------- Ações ---------- */
+    .acoes { margin-top: clamp(14px, 2.6vh, 24px); }
+    .tentar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 46px;
+      padding: 11px 24px;
+      border-radius: var(--radius);
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 650;
+      box-shadow: 0 10px 24px -10px #0762ffb3;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .tentar svg { width: 16px; height: 16px; transition: transform .4s ease; }
+    .tentar:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 14px 28px -10px #0762ffcc; }
+    .tentar:hover svg { transform: rotate(180deg); }
+    .tentar:focus-visible { outline: 3px solid #0762ff66; outline-offset: 3px; }
+    .nota { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+    footer { margin-top: 20px; color: #a1a1aa; font-size: 12px; }
+    footer strong { color: var(--text); font-weight: 650; }
+    footer strong span { color: var(--primary); }
+
+    @media (max-width: 420px) {
+      .tarefas { padding: 12px 14px 10px; }
+      .tarefas ul { column-gap: 10px; }
+      .tarefas li { font-size: 13px; }
+      .descricao { font-size: 14px; }
+      .marca-nome { font-size: 23px; }
+    }
+
+    /* Telas largas (notebooks e monitores): ilustração à esquerda, texto à direita */
+    @media (min-width: 900px) {
+      .container {
+        width: min(100%, 1080px);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
+        grid-template-areas: "vitrine main" "vitrine rodape";
+        column-gap: clamp(32px, 5vw, 72px);
+        align-items: center;
+        text-align: left;
+      }
+      .vitrine { grid-area: vitrine; text-align: center; }
+      main { grid-area: main; margin-top: 0; }
+      footer { grid-area: rodape; }
+      .descricao { margin: 0; }
+      .tarefas { margin-left: 0; }
+      .palco {
+        width: min(100%, 540px, calc((100vh - 150px) * 1.389));
+        width: min(100%, 540px, calc((100dvh - 150px) * 1.389));
+      }
+    }
+
+    /* Janelas baixas: tira o rodapé (a marca já aparece no topo) */
+    @media (max-height: 900px) {
+      footer { display: none; }
+    }
+
+    /* Celulares: tudo mais compacto para caber sem rolagem */
+    @media (max-width: 600px) and (max-height: 860px) {
+      body { padding-top: 10px; padding-bottom: 10px; }
+      .palco { --resto: 560px; }
+      .marca { gap: 10px; margin-bottom: 0; }
+      .marca img { width: 40px; height: 40px; }
+      .marca-nome { font-size: 21px; }
+      .marca-slogan { font-size: 10px; }
+      .selo { padding: 3px 11px; }
+      h1 { font-size: 24px; margin: 8px 0 6px; }
+      .descricao { font-size: 14px; line-height: 1.5; }
+      .tarefas li { padding: 3px 0; }
+      .tarefas ul { margin-bottom: 8px; }
+      .cura { padding-top: 8px; }
+      .cura-topo { margin-bottom: 6px; }
+      .marcos { height: 15px; margin-top: 4px; }
+      .tentar { min-height: 42px; padding: 9px 22px; }
+      /* A página continua recarregando sozinha; só o aviso sai */
+      .nota { display: none; }
+    }
+
+    /* Respeita quem prefere menos movimento: betoneira parada sob a usina, etapas estáticas */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .slump { opacity: 1; }
+      .balanca { transform: scaleX(.6); }
+      .t1 .ok, .t2 .ok, .t3 .exec, .t4 .pend { opacity: 1; }
+      .mpa::before { content: "21 MPa"; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <div class="container">
+    <div class="vitrine">
+    <div class="marca">
+      <img src="data:image/png;base64,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" width="200" height="200" alt="">
+      <span>
+        <span class="marca-nome">Concre<span>tus</span></span>
+        <span class="marca-slogan">Logística sólida</span>
+      </span>
+    </div>
+
+    <div class="palco" aria-hidden="true">
+      <svg viewBox="0 0 400 288" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="zebrado" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="10" height="10" fill="#fff"/>
+            <rect width="5" height="10" fill="#0762ff"/>
+          </pattern>
+          <radialGradient id="halo">
+            <stop offset="0" stop-color="#0762ff" stop-opacity=".12"/>
+            <stop offset=".6" stop-color="#0762ff" stop-opacity=".05"/>
+            <stop offset="1" stop-color="#0762ff" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="volume" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
+            <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+            <stop offset="1" stop-color="#0a2a66" stop-opacity=".22"/>
+          </linearGradient>
+          <!-- Mini logotipo (três "C" encaixados) -->
+          <symbol id="logo" viewBox="0 0 40 40">
+            <g fill="none" stroke="currentColor" stroke-width="3.2">
+              <path d="M36 4H19L4 13v14l15 9h17"/>
+              <path d="M33 10H21l-10 6v8l10 6h12"/>
+              <path d="M30 16h-7l-4 2.5v3l4 2.5h7"/>
+            </g>
+          </symbol>
+          <!-- Formato do balão da betoneira (coordenadas do caminhão) -->
+          <clipPath id="balao-clip">
+            <ellipse cx="80" cy="42" rx="62" ry="25" transform="rotate(9 80 42)"/>
+          </clipPath>
+        </defs>
+
+        <circle cx="180" cy="130" r="150" fill="url(#halo)"/>
+
+        <!-- Nuvens -->
+        <g class="nuvem" fill="#fff" stroke="#0762ff40" stroke-width="2">
+          <path d="M262 34h50a10 10 0 0 0 0-20 14 14 0 0 0-26-6 11 11 0 0 0-24 6 10 10 0 0 0 0 20z"/>
+        </g>
+        <g class="nuvem n2" fill="#fff" stroke="#0762ff33" stroke-width="2">
+          <path d="M318 70h38a8 8 0 0 0 0-16 11 11 0 0 0-20-5 9 9 0 0 0-18 5 8 8 0 0 0 0 16z"/>
+        </g>
+
+        <!-- Pista -->
+        <rect x="0" y="262" width="400" height="16" fill="#e8effc"/>
+        <path d="M0 270H400" stroke="#fff" stroke-width="2.4" stroke-dasharray="14 10"/>
+        <path d="M0 262H400" stroke="#0a2a6633" stroke-width="1.6"/>
+
+        <!-- Silo de cimento (um segundo silo ao fundo) -->
+        <g opacity=".45" stroke="#0a2a66" stroke-width="2" stroke-linejoin="round">
+          <path d="M-8 52q15-12 30 0v120l-9 18h-12l-9-18z" fill="#fff"/>
+        </g>
+        <g stroke="#0a2a66" stroke-width="2.4" stroke-linejoin="round">
+          <path d="M28 168v94M72 168v94" fill="none"/>
+          <path d="M28 214l44 30M72 214l-44 30" stroke-width="1.6" fill="none"/>
+          <path d="M22 40q28-22 56 0v130l-18 26h-20l-18-26z" fill="#fff"/>
+          <path d="M40 196h20v8H40z" fill="#0762ff"/>
+        </g>
+        <path d="M23 62h54M23 148h54" stroke="#0762ff" stroke-width="7"/>
+        <path d="M70 46v118" stroke="#0a2a6640" stroke-width="2" stroke-dasharray="3 4"/>
+        <text x="50" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="8.5" font-weight="800" fill="#0a2a66" letter-spacing=".5">CIMENTO</text>
+        <use href="#logo" x="40" y="116" width="20" height="20" color="#0762ff"/>
+
+        <!-- Rosca transportadora de cimento: silo → usina -->
+        <path d="M58 30L112 58" stroke="#0a2a66" stroke-width="8" stroke-linecap="round"/>
+        <path d="M58 30L112 58" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/>
+        <path class="cimento" d="M58 30L112 58" stroke="#9aa4b2" stroke-width="3" stroke-linecap="round"/>
+
+        <!-- Correia transportadora de brita: pilha → topo da usina -->
+        <g stroke="#0a2a66" stroke-width="2.4" stroke-linejoin="round">
+          <path d="M330 186v76M272 119v143" fill="none"/>
+          <path d="M330 222h-16M272 210h-14" fill="none" stroke-width="1.6"/>
+        </g>
+        <path d="M372 234L214 52" stroke="#0a2a66" stroke-width="10" stroke-linecap="round"/>
+        <path d="M372 234L214 52" stroke="#fff" stroke-width="5.6" stroke-linecap="round"/>
+        <path class="brita" d="M372 234L214 52" stroke="#7d8796" stroke-width="5" stroke-linecap="round" transform="translate(0 -3)"/>
+        <circle cx="372" cy="234" r="5" fill="#0762ff" stroke="#0a2a66" stroke-width="2"/>
+
+        <!-- Pilha de brita -->
+        <path d="M334 262q22-44 44-40t30 40z" fill="#d5dbe4" stroke="#0a2a66" stroke-width="2.2" stroke-linejoin="round"/>
+        <g fill="#9aa4b2"><circle cx="356" cy="246" r="2"/><circle cx="368" cy="236" r="1.6"/><circle cx="378" cy="250" r="2.2"/><circle cx="390" cy="240" r="1.6"/><circle cx="348" cy="256" r="1.6"/></g>
+
+        <!-- Usina dosadora -->
+        <g stroke="#0a2a66" stroke-width="2.4" stroke-linejoin="round">
+          <path d="M119 136v126M205 136v126" fill="none" stroke-width="6"/>
+          <path d="M122 140l80 40M202 140l-80 40" fill="none" stroke-width="1.6"/>
+          <path d="M104 40L162 22l58 18z" fill="#0762ff"/>
+          <rect x="110" y="40" width="104" height="96" rx="3" fill="#fff"/>
+          <rect x="122" y="50" width="80" height="30" rx="4" fill="#0762ff"/>
+          <rect x="124" y="90" width="76" height="9" rx="4.5" fill="#eef4ff" stroke-width="1.6"/>
+          <path d="M140 136h44l-14 14h-16z" fill="#fff"/>
+          <rect x="157" y="148" width="10" height="10" rx="1.5" fill="#0762ff"/>
+        </g>
+        <use href="#logo" x="126" y="58" width="14" height="14" color="#fff"/>
+        <text x="143" y="68.5" font-family="Arial, sans-serif" font-size="8.2" font-weight="800" fill="#fff">CONCRETUS</text>
+        <rect class="balanca" x="125.5" y="91.5" width="73" height="6" rx="3" fill="#9aa4b2"/>
+        <text x="162" y="113" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" font-weight="700" fill="#0a2a66" opacity=".7" letter-spacing="1">DOSAGEM</text>
+        <rect x="126" y="119" width="12" height="9" rx="1.5" fill="#dbe7ff" stroke="#0a2a66" stroke-width="1.4"/>
+        <rect x="186" y="119" width="12" height="9" rx="1.5" fill="#dbe7ff" stroke="#0a2a66" stroke-width="1.4"/>
+        <circle class="lampada" cx="162" cy="30" r="3.4" fill="#f5a524" stroke="#0a2a66" stroke-width="1.4"/>
+
+        <!-- Jato de concreto saindo da bica -->
+        <g class="jato">
+          <rect x="158" y="158" width="8" height="26" rx="3" fill="#9aa4b2"/>
+          <path class="fluxo" d="M162 158v26" stroke="#c8ced8" stroke-width="2" stroke-linecap="round"/>
+        </g>
+        <circle class="respingo" cx="157" cy="182" r="2" fill="#9aa4b2"/>
+        <circle class="respingo r2" cx="167" cy="181" r="1.8" fill="#9aa4b2"/>
+
+        <!-- Betoneira (coordenadas locais; estacionada em 138,170) -->
+        <g transform="translate(138 170)">
+          <g class="mover">
+            <ellipse cx="102" cy="92" rx="94" ry="3.5" fill="#0a2a661a"/>
+            <g class="carga">
+              <!-- Bica de descarga traseira -->
+              <path d="M18 38L5 54" stroke="#0a2a66" stroke-width="6" stroke-linecap="round"/>
+              <path d="M18 38L5 54" stroke="#0762ff" stroke-width="2.6" stroke-linecap="round"/>
+              <!-- Chassi e berços do balão -->
+              <g stroke="#0a2a66" stroke-width="2.2" stroke-linejoin="round">
+                <path d="M24 70l7-24h10l4 24zM112 70l6-14h12l4 14z" fill="#0550d6"/>
+                <rect x="12" y="68" width="182" height="9" rx="2" fill="#0a2a66"/>
+              </g>
+              <!-- Balão com hélice girando -->
+              <g clip-path="url(#balao-clip)">
+                <ellipse cx="80" cy="42" rx="62" ry="25" transform="rotate(9 80 42)" fill="#fff"/>
+                <g class="helice" stroke="#0762ff" stroke-width="6">
+                  <path d="M-36 0l-14 90M-20 0l-14 90M-4 0l-14 90M12 0l-14 90M28 0l-14 90M44 0l-14 90M60 0l-14 90M76 0l-14 90M92 0l-14 90M108 0l-14 90M124 0l-14 90M140 0l-14 90M156 0l-14 90M172 0l-14 90"/>
+                </g>
+                <ellipse cx="80" cy="42" rx="62" ry="25" transform="rotate(9 80 42)" fill="url(#volume)"/>
+              </g>
+              <ellipse cx="80" cy="42" rx="62" ry="25" transform="rotate(9 80 42)" fill="none" stroke="#0a2a66" stroke-width="2.4"/>
+              <path d="M48 26q30-10 64 0" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
+              <!-- Funil de carga -->
+              <g stroke="#0a2a66" stroke-width="2.2" stroke-linejoin="round">
+                <rect x="21" y="25" width="8" height="8" fill="#0a2a66"/>
+                <path d="M11 12h26l-7 14H18z" fill="#fff"/>
+                <rect x="9" y="9" width="30" height="5" rx="2" fill="#0762ff"/>
+              </g>
+              <!-- Cabine -->
+              <g stroke="#0a2a66" stroke-width="2.2" stroke-linejoin="round">
+                <path d="M146 70V36q0-6 6-6h24q6 0 9 6l9 18v16z" fill="#0762ff"/>
+                <path d="M166 35h11q3 0 5 3l6 14h-22z" fill="#dbe7ff" stroke-width="1.6"/>
+                <rect x="186" y="64" width="11" height="6" rx="1.5" fill="#0a2a66"/>
+              </g>
+              <path d="M161 36v32" stroke="#0a2a66" stroke-width="1.2" opacity=".5"/>
+              <use href="#logo" x="148" y="47" width="12" height="12" color="#fff"/>
+              <rect x="189" y="57" width="5" height="5" rx="1" fill="#ffd34d"/>
+              <!-- Rodas -->
+              <g class="roda">
+                <circle cx="36" cy="82" r="10" fill="#0a2a66"/>
+                <circle cx="36" cy="82" r="4.5" fill="#fff"/>
+                <path d="M36 73v4" stroke="#0762ff" stroke-width="2"/>
+              </g>
+              <g class="roda">
+                <circle cx="59" cy="82" r="10" fill="#0a2a66"/>
+                <circle cx="59" cy="82" r="4.5" fill="#fff"/>
+                <path d="M59 73v4" stroke="#0762ff" stroke-width="2"/>
+              </g>
+              <g class="roda">
+                <circle cx="172" cy="82" r="10" fill="#0a2a66"/>
+                <circle cx="172" cy="82" r="4.5" fill="#fff"/>
+                <path d="M172 73v4" stroke="#0762ff" stroke-width="2"/>
+              </g>
+            </g>
+          </g>
+        </g>
+
+        <!-- Selo: slump aprovado -->
+        <g class="slump">
+          <rect x="202" y="142" width="86" height="22" rx="11" fill="#0762ff"/>
+          <path d="M236 164l5 6 5-6z" fill="#0762ff"/>
+          <path d="M212 159l3.5-11h5l3.5 11z" fill="#fff"/>
+          <text x="229" y="156.5" font-family="Arial, sans-serif" font-size="8.5" font-weight="800" fill="#fff">SLUMP OK</text>
+        </g>
+
+        <!-- Cavalete de manutenção (primeiro plano) -->
+        <g stroke="#0a2a66" stroke-width="2.2" stroke-linejoin="round">
+          <path d="M24 240l-6 22M24 240l6 22M96 240l-6 22M96 240l6 22" fill="none"/>
+          <rect x="12" y="236" width="96" height="11" rx="2" fill="url(#zebrado)"/>
+          <rect x="27" y="219" width="66" height="14" rx="2.5" fill="#fff"/>
+        </g>
+        <text x="60" y="229" text-anchor="middle" font-family="Arial, sans-serif" font-size="6.6" font-weight="800" fill="#0762ff">MANUTENÇÃO</text>
+        <circle class="lampada" cx="24" cy="231" r="3.6" fill="#f5a524" stroke="#0a2a66" stroke-width="1.6"/>
+
+        <!-- Cone -->
+        <g stroke="#0a2a66" stroke-width="2" stroke-linejoin="round">
+          <path d="M359 240h6l8 20h-22z" fill="#0762ff"/>
+          <path d="M357 247h10l2 5h-14z" fill="#fff"/>
+          <rect x="348" y="259" width="28" height="4" rx="1.5" fill="#0762ff"/>
+        </g>
+      </svg>
+    </div>
+    </div>
+
+    <main>
+      <div class="selo" role="status">Manutenção em andamento</div>
+      <h1>O <span>Concretus</span> está em cura</h1>
+      <p class="descricao">Assim como todo bom concreto, o sistema precisa de um tempo para ganhar resistência. Ele está temporariamente indisponível enquanto nossa equipe acerta o traço, mas seus dados estão seguros. Voltaremos em breve!</p>
+
+      <section class="tarefas" aria-label="Etapas da manutenção">
+        <ul>
+          <li class="t1">
+            <span class="ico" aria-hidden="true"><span class="pend"></span><span class="exec"></span><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span>
+            <span class="rot">Dosando o traço</span>
+          </li>
+          <li class="t2">
+            <span class="ico" aria-hidden="true"><span class="pend"></span><span class="exec"></span><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span>
+            <span class="rot">Carregando a betoneira</span>
+          </li>
+          <li class="t3">
+            <span class="ico" aria-hidden="true"><span class="pend"></span><span class="exec"></span><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span>
+            <span class="rot">Conferindo o slump</span>
+          </li>
+          <li class="t4">
+            <span class="ico" aria-hidden="true"><span class="pend"></span><span class="exec"></span><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></span>
+            <span class="rot">Liberando a remessa</span>
+          </li>
+        </ul>
+
+        <div class="cura" aria-hidden="true">
+          <div class="cura-topo">
+            <strong>Ganho de resistência</strong>
+            <span class="mpa"> <small>/ fck 30</small></span>
+          </div>
+          <div class="trilho"><div class="enchimento"></div></div>
+          <div class="marcos">
+            <span class="m3">3 dias</span>
+            <span class="m7">7 dias</span>
+            <span class="m28">28 dias</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="acoes">
+        <a href="" class="tentar" aria-label="Tentar acessar o Concretus novamente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+          Tentar novamente
+        </a>
+      </div>
+      <p class="nota">Esta página tenta reconectar automaticamente a cada 60 segundos.</p>
+    </main>
+
+    <footer><strong>Concre<span>tus</span></strong> &bull; Logística sólida</footer>
+  </div>
+</body>
+</html>
